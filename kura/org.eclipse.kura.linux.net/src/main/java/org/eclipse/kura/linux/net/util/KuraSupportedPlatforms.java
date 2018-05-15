@@ -12,24 +12,28 @@
  *******************************************************************************/
 package org.eclipse.kura.linux.net.util;
 
-public enum KuraConstants {
+public enum KuraSupportedPlatforms {
     // image name, version
-    Reliagate_10_20("reliagate-10-20"),
-    ReliaGATE_10_05("reliagate-10-05"),
-    Reliagate_10_11("reliagate-10-11"),
-    Reliagate_10_12("reliagate-10-12"),
-    Reliagate_20_25("reliagate-20-25"),
-    BoltGATE_20_25("boltgate-20-25"),
-    Reliagate_20_26("reliagate-20-26");
+    YOCTO_121("yocto", "1.2.1"),
+    YOCTO_161("yocto", "1.6.1"),
+    RASPBIAN_100("raspbian", "1.0.0"),
+    DEBIAN_100("debian", "1.0.0"),
+    RHEL_73("rhel", "7.3"),
+    FEDORA_2X("fedora", "2x");
 
-    private String targetName;
+    private String imageName;
+    private String imageVersion;
 
-    private KuraConstants(String targetName) {
-        this.targetName = targetName;
+    private KuraSupportedPlatforms(String imageName, String imageVersion) {
+        this.imageName = imageName;
+        this.imageVersion = imageVersion;
     }
 
-    public String getTargetName() {
-        return this.targetName;
+    public String getImageName() {
+        return this.imageName;
     }
 
+    public String getImageVersion() {
+        return this.imageVersion;
+    }
 }
