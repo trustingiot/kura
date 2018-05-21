@@ -61,7 +61,10 @@ public class BluetoothLeIBeaconEncoderDecoderImplTest {
 
         byte[] encoded = encoder.encode(beacon);
 
-        BluetoothLeIBeacon decoded = decoder.decode(Arrays.copyOfRange(encoded, 1, encoded.length));
+        byte[] data = Arrays.copyOfRange(encoded, 4, encoded.length - 1);
+        data[0] = encoded[3]; // encoded[3] == flags && decoder#decode b[0] must be flags
+
+        BluetoothLeIBeacon decoded = decoder.decode(data);
 
         compare(beacon, decoded);
     }
@@ -112,8 +115,7 @@ public class BluetoothLeIBeaconEncoderDecoderImplTest {
         beacon.setTxPower((short) 50);
         beacon.setUuid(UUID.fromString("11111111-1111-1111-1111-111111111112"));
 
-        byte[] encoded = { 1, 0x1F, 26, (byte) 0xFF, 76, 0, 2, 21, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17,
-                17, 17, 18, 0, 5, 0, 2, 50, 0 };
+        byte[] encoded = { (byte) 0x1f, (byte) 0xff, 76, 0, 2, 21, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 18, 0, 5, 0, 2, 50 };
 
         BluetoothLeIBeaconDecoderImpl decoder = new BluetoothLeIBeaconDecoderImpl();
         BluetoothLeIBeacon decoded = decoder.decode(encoded);
@@ -123,8 +125,7 @@ public class BluetoothLeIBeaconEncoderDecoderImplTest {
 
     @Test
     public void testDecodeStopAt0() {
-        byte[] encoded = { 1, 0x1F, 26, 1, 76, 0, 2, 21, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 18,
-                0, 5, 0, 2, 50, 0, 0 };
+        byte[] encoded = { (byte) 0x1f, 1, 76, 0, 2, 21, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 18, 0, 5, 0, 2, 50 };
 
         BluetoothLeIBeaconDecoderImpl decoder = new BluetoothLeIBeaconDecoderImpl();
         BluetoothLeIBeacon decoded = decoder.decode(encoded);
