@@ -54,55 +54,45 @@ public class BluetoothLeIBeaconDecoderImpl implements BluetoothLeIBeaconDecoder 
      * @return BluetoothLeIBeacon or null if no beacon data present
      */
     private static BluetoothLeIBeacon parseEIRData(byte[] b) {
+        if (isIBeaconEIRData(b)) {
+            BluetoothLeIBeacon beacon = new BluetoothLeIBeacon();
 
-        int ptr = 0;
-        while (ptr < b.length) {
+            beacon.setLeLimited((b[0] & 0x01) == 0x01);
+            beacon.setLeGeneral((b[0] & 0x02) == 0x02);
+            beacon.setBrEdrSupported((b[0] & 0x04) == 0x04);
+            beacon.setLeBrController((b[0] & 0x08) == 0x08);
+            beacon.setLeBrHost((b[0] & 0x10) == 0x10);
 
-            int structSize = b[ptr];
-            if (structSize == 0) {
-                break;
+            int uuidPtr = 2 + IBEACON_PREFIX.length;
+            int majorPtr = uuidPtr + 16;
+            int minorPtr = uuidPtr + 18;
+
+            StringBuilder uuid = new StringBuilder();
+            for (byte ub : Arrays.copyOfRange(b, uuidPtr, majorPtr)) {
+                uuid.append(String.format("%02X", ub));
             }
+            beacon.setUuid(UUID.fromString(uuid.toString().replaceFirst(
+                    "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)",
+                    "$1-$2-$3-$4-$5")));
 
-            byte dataType = b[ptr + 1];
-
-            if (dataType == (byte) 0xFF // Data-Type: Manufacturer-Specific
-                    && Arrays.equals(IBEACON_PREFIX, Arrays.copyOfRange(b, ptr + 2, ptr + 2 + IBEACON_PREFIX.length))
-                    && ptr > 0) {
-
-                BluetoothLeIBeacon beacon = new BluetoothLeIBeacon();
-
-                beacon.setLeLimited((b[ptr - 1] & 0x01) == 0x01);
-                beacon.setLeGeneral((b[ptr - 1] & 0x02) == 0x02);
-                beacon.setBrEdrSupported((b[ptr - 1] & 0x04) == 0x04);
-                beacon.setLeBrController((b[ptr - 1] & 0x08) == 0x08);
-                beacon.setLeBrHost((b[ptr - 1] & 0x10) == 0x10);
-
-                int uuidPtr = ptr + 2 + IBEACON_PREFIX.length;
-                int majorPtr = uuidPtr + 16;
-                int minorPtr = uuidPtr + 18;
-
-                StringBuilder uuid = new StringBuilder();
-                for (byte ub : Arrays.copyOfRange(b, uuidPtr, majorPtr)) {
-                    uuid.append(String.format("%02X", ub));
-                }
-                beacon.setUuid(UUID.fromString(uuid.toString().replaceFirst(
-                        "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)",
-                        "$1-$2-$3-$4-$5")));
-
-                int majorl = b[majorPtr + 1] & 0xFF;
-                int majorh = b[majorPtr] & 0xFF;
-                int minorl = b[minorPtr + 1] & 0xFF;
-                int minorh = b[minorPtr] & 0xFF;
-                beacon.setMajor((short) (majorh << 8 | majorl));
-                beacon.setMinor((short) (minorh << 8 | minorl));
-                beacon.setTxPower(b[minorPtr + 2]);
-                return beacon;
-            }
-
-            ptr += structSize + 1;
+            int majorl = b[majorPtr + 1] & 0xFF;
+            int majorh = b[majorPtr] & 0xFF;
+            int minorl = b[minorPtr + 1] & 0xFF;
+            int minorh = b[minorPtr] & 0xFF;
+            beacon.setMajor((short) (majorh << 8 | majorl));
+            beacon.setMinor((short) (minorh << 8 | minorl));
+            beacon.setTxPower((short) b[minorPtr + 2]);
+            return beacon;
         }
 
         return null;
+    }
+
+    private static boolean isIBeaconEIRData(byte[] b) {
+        return b != null &&
+               27 == b.length && // 27 = 1 flags + 1 data type + 4 prefix + 16 uuid + 2 major + 2 minor + 1 tx
+               b[1] == (byte) 0xFF &&
+               Arrays.equals(IBEACON_PREFIX, Arrays.copyOfRange(b, 2, 2 + IBEACON_PREFIX.length));
     }
 
 }
